@@ -3,6 +3,7 @@
 // inject(); // Patch express in order to use async / await syntax
 
 // Require Dependencies
+const dotenv = require("dotenv");
 
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -13,14 +14,15 @@ const logger = require("./util/logger");
 
 // Load .env Enviroment Variables to process.env
 
-require("mandatoryenv").load([
-  "DB_HOST",
-  "DB_DATABASE",
-  "DB_USER",
-  "DB_PASSWORD",
-  "PORT",
-  "SECRET",
-]);
+// require("mandatoryenv").load([
+//   "DB_HOST",
+//   "DB_DATABASE",
+//   "DB_USER",
+//   "DB_PASSWORD",
+//   "PORT",
+//   "SECRET",
+// ]);
+dotenv.config();
 
 const { PORT } = process.env;
 
