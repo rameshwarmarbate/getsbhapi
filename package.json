@@ -1,0 +1,46 @@
+{
+  "name": "getsbh-backend",
+  "version": "1.0.0",
+  "description": "getsbh-backend is the ultimate backend solution",
+  "main": "src/server.js",
+  "scripts": {
+    "setup": "npm install && npm update",
+    "start": "node src/server.js",
+    "dev": "nodemon"
+  },
+  "keywords": [
+    "express",
+    "backend",
+    "getsbh-backend"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "consolidate": "^1.0.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-custom-error": "^1.9.4",
+    "has-keys": "^0.1.0",
+    "helmet": "^7.1.0",
+    "http-status": "^1.7.4",
+    "jsonwebtoken": "^9.0.2",
+    "mandatoryenv": "^3.0.4",
+    "module-alias": "^2.2.3",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.9.3",
+    "nodemailer": "^6.9.13",
+    "rotating-file-stream": "^3.2.1",
+    "sequelize": "^6.37.1",
+    "sequelize-auto": "^0.8.8"
+  },
+  "_moduleAliases": {
+    "@root": "src",
+    "@controllers": "src/controllers",
+    "@models": "src/models",
+    "@util": "src/util",
+    "@routes": "src/routes"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
