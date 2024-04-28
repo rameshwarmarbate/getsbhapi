@@ -1,6 +1,6 @@
 const status = require("http-status");
 
-const userModel = require("@models/user.js");
+const userModel = require("../models/user.js");
 const jwt = require("jsonwebtoken");
 
 const has = require("has-keys");

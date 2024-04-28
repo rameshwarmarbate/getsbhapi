@@ -1,6 +1,3 @@
-// Register module/require aliases
-require("module-alias/register");
-
 // Patches
 // const { inject, errorHandler } = require("express-custom-error");
 // inject(); // Patch express in order to use async / await syntax
@@ -12,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
-const logger = require("@util/logger");
+const logger = require("./util/logger");
 
 // Load .env Enviroment Variables to process.env
 
@@ -54,7 +51,7 @@ app.use(
 app.use("/icons/", express.static(path.join(__dirname, "..", "data", "icons")));
 // Assign Routes
 
-app.use("/", require("@routes/router.js"));
+app.use("/", require("./routes/router.js"));
 
 // Handle errors
 // app.use(errorHandler());

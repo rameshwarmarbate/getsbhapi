@@ -1,6 +1,6 @@
 const status = require("http-status");
 
-const deviceModel = require("@models/device.js");
+const deviceModel = require("../models/device.js");
 
 const has = require("has-keys");
 

@@ -1,8 +1,8 @@
 const status = require("http-status");
 const has = require("has-keys");
 
-const userDeviceModel = require("@models/userDevice.js");
-const deviceModel = require("@models/device.js");
+const userDeviceModel = require("../models/userDevice.js");
+const deviceModel = require("../models/device.js");
 
 async function getDevices(req, res) {
   if (!has(req.query, ["user_id"]))
