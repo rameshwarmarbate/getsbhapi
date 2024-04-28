@@ -2,7 +2,7 @@
 require("module-alias/register");
 
 // Patches
-const { inject, errorHandler } = require("express-custom-error");
+// const { inject, errorHandler } = require("express-custom-error");
 inject(); // Patch express in order to use async / await syntax
 
 // Require Dependencies
@@ -57,7 +57,7 @@ app.use("/icons/", express.static(path.join(__dirname, "..", "data", "icons")));
 app.use("/", require("@routes/router.js"));
 
 // Handle errors
-app.use(errorHandler());
+// app.use(errorHandler());
 
 // Handle not valid route
 app.use("*", (req, res) => {
