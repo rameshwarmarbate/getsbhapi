@@ -3,7 +3,7 @@ require("module-alias/register");
 
 // Patches
 // const { inject, errorHandler } = require("express-custom-error");
-inject(); // Patch express in order to use async / await syntax
+// inject(); // Patch express in order to use async / await syntax
 
 // Require Dependencies
 
