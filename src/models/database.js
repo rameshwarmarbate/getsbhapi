@@ -13,6 +13,7 @@ const db = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
   },
   dialect: "mysql",
   dialectModule: require("mysql2"),
+  timeout: 60000 * 5, // 5 minute
 });
 
 db.authenticate()
