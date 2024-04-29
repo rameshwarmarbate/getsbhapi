@@ -12,6 +12,7 @@ const db = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
     idle: 10000,
   },
   dialect: "mysql",
+  dialectModule: require("mysql2"),
 });
 
 db.authenticate()
