@@ -1,8 +1,8 @@
 const db = require("../models/database.js");
 const { DataTypes } = require("sequelize");
 
-const User = db.define(
-  "User",
+const SalesPerson = db.define(
+  "SalesPerson",
   {
     id: {
       type: DataTypes.BIGINT.UNSIGNED,
@@ -10,7 +10,11 @@ const User = db.define(
       primaryKey: true,
       allowNull: false,
     },
-    name: {
+    first_name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    last_name: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -26,14 +30,22 @@ const User = db.define(
       type: DataTypes.STRING(15),
       allowNull: true,
     },
-    otp: {
-      type: DataTypes.STRING(6),
+    password: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    created_by: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+    },
+    updated_by: {
+      type: DataTypes.BIGINT.UNSIGNED,
       allowNull: true,
     },
   },
   {
     sequelize: db,
-    tableName: "user",
+    tableName: "salesperson",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
@@ -45,4 +57,4 @@ const User = db.define(
   }
 );
 
-module.exports = User;
+module.exports = SalesPerson;

@@ -12,12 +12,21 @@ const UserDevice = db.define(
     },
     user_id: {
       type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: false,
+      validate: {
+        isInt: true,
+      },
     },
     device_id: {
       type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: false,
+      validate: {
+        isInt: true,
+      },
     },
     device_no: {
       type: DataTypes.STRING(50),
+      allowNull: true,
     },
     is_active: {
       type: DataTypes.BOOLEAN,
@@ -27,7 +36,17 @@ const UserDevice = db.define(
   {
     sequelize: db,
     tableName: "user_device",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    indexes: [
+      {
+        fields: ["user_id"],
+      },
+      {
+        fields: ["device_id"],
+      },
+    ],
   }
 );
 

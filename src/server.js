@@ -1,10 +1,9 @@
 // Patches
-// const { inject, errorHandler } = require("express-custom-error");
-// inject(); // Patch express in order to use async / await syntax
+const { inject, errorHandler } = require("express-custom-error");
+inject(); // Patch express for async/await syntax
 
 // Require Dependencies
 const dotenv = require("dotenv");
-
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -12,19 +11,10 @@ const helmet = require("helmet");
 const path = require("path");
 const logger = require("./util/logger");
 
-// Load .env Enviroment Variables to process.env
-
-// require("mandatoryenv").load([
-//   "DB_HOST",
-//   "DB_DATABASE",
-//   "DB_USER",
-//   "DB_PASSWORD",
-//   "PORT",
-//   "SECRET",
-// ]);
+// Load .env Environment Variables
 dotenv.config();
 
-const { PORT } = process.env;
+const { PORT = 3000 } = process.env; // Default to 3000 if PORT is not defined
 
 // Instantiate an Express Application
 const app = express();
@@ -34,29 +24,42 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Configure custom logger middleware
-app.use(logger.dev, logger.combined);
+app.use(logger.dev);
+app.use(logger.combined);
 
 app.use(cookieParser());
 app.use(cors());
 app.use(helmet());
 
-// This middleware adds the json header to every response
+// Middleware to add the JSON header to every response
 app.use("*", (req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   next();
 });
 
+// Static file serving with caching
 app.use(
   "/images/",
-  express.static(path.join(__dirname, "..", "data", "images"))
+  express.static(path.join(__dirname, "..", "data", "images"), {
+    maxAge: "1d", // Cache for 1 day
+  })
 );
-app.use("/icons/", express.static(path.join(__dirname, "..", "data", "icons")));
-// Assign Routes
+app.use(
+  "/icons/",
+  express.static(path.join(__dirname, "..", "data", "icons"), {
+    maxAge: "1d", // Cache for 1 day
+  })
+);
 
+// Assign Routes
 app.use("/", require("./routes/router.js"));
+app.get("/", (req, res) => {
+  // Specify the HTTP method for the welcome message
+  res.send("Welcome to the getsbh API!");
+});
 
 // Handle errors
-// app.use(errorHandler());
+app.use(errorHandler()); // Ensure this is defined correctly
 
 // Handle not valid route
 app.use("*", (req, res) => {
@@ -64,4 +67,4 @@ app.use("*", (req, res) => {
 });
 
 // Open Server on selected Port
-app.listen(PORT, () => console.info("Server listening on port ", PORT));
+app.listen(PORT, () => console.info(`Server listening on port ${PORT}`));
