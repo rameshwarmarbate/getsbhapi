@@ -3,6 +3,7 @@ const status = require("http-status");
 const deviceModel = require("../models/device.js");
 
 const has = require("has-keys");
+const { Op } = require("sequelize");
 
 module.exports = {
   async getDevices(req, res) {
@@ -11,6 +12,17 @@ module.exports = {
     if (is_smart_device) {
       filters = {
         is_smart_device: is_smart_device === "true",
+      };
+    }
+    let data = await deviceModel.findAll({ where: filters });
+    res.json(data);
+  },
+  async getProductByName(req, res) {
+    const { name } = req.query;
+    let filters = {};
+    if (name) {
+      filters = {
+        title: { [Op.like]: `%${name}%` },
       };
     }
     let data = await deviceModel.findAll({ where: filters });
