@@ -1,5 +1,5 @@
 const status = require("http-status");
-const salesPersonModel = require("../models/salesperson");
+const { SalesPerson } = require("../models");
 const jwt = require("jsonwebtoken");
 const has = require("has-keys");
 const { verifyPassword, hashPassword } = require("../util");
@@ -14,7 +14,7 @@ async function login(req, res) {
 
   let { email, password } = req.body;
 
-  const user = await salesPersonModel.findOne({ where: { email }, raw: true });
+  const user = await SalesPerson.findOne({ where: { email }, raw: true });
 
   if (!user) {
     throw { code: status.BAD_REQUEST, message: "User not registered." };
@@ -42,7 +42,7 @@ async function requestReset(req, res) {
       message: "You must specify the email and password.",
     };
   const { email } = req.body;
-  const user = await salesPersonModel.findOne({ where: { email }, raw: true });
+  const user = await SalesPerson.findOne({ where: { email }, raw: true });
   if (!user) {
     throw { code: status.BAD_REQUEST, message: "User not registered." };
   }
@@ -64,7 +64,7 @@ async function resetPassword(req, res) {
   if (!userId) {
     throw { code: status.BAD_REQUEST, message: "Invalid token." };
   }
-  const user = await salesPersonModel.findByPk(userId);
+  const user = await SalesPerson.findByPk(userId);
   if (!user) {
     throw { code: status.BAD_REQUEST, message: "User not found." };
   }

@@ -38,6 +38,10 @@ const Customer = db.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    district: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
     state: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -65,11 +69,6 @@ const Customer = db.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-    indexes: [
-      {
-        fields: ["email"],
-      },
-    ],
   }
 );
 
