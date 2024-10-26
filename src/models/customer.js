@@ -24,34 +24,38 @@ const Customer = db.define(
     },
     email: {
       type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
+      allowNull: true,
     },
     address: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     pincode: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     city: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     state: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     country: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     gst_no: {
       type: DataTypes.STRING(15),
+      allowNull: true,
+    },
+    created_by: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+    },
+    updated_by: {
+      type: DataTypes.BIGINT.UNSIGNED,
       allowNull: true,
     },
   },

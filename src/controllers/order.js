@@ -1,80 +1,88 @@
 const status = require("http-status");
-const salesPersonModel = require("../models/salesperson");
-const jwt = require("jsonwebtoken");
-const has = require("has-keys");
-const { verifyPassword, hashPassword } = require("../util");
-const { sendResetEmail } = require("../util/mailer");
+const CustomerModel = require("../models/customer");
+const OrderModel = require("../models/order");
+const OrderCounter = require("../models/orderCounter");
+
+const generateOrderNo = async () => {
+  const currentDate = new Date();
+  const dateString = `${String(currentDate.getDate()).padStart(2, "0")}${String(
+    currentDate.getMonth() + 1
+  ).padStart(2, "0")}${currentDate.getFullYear().toString().slice(-2)}`; // Format DDMMYY
+  let counter = await OrderCounter.findOne();
+  if (!counter) {
+    counter = await OrderCounter.create({});
+  }
+
+  // Increment the counter
+  const newOrderNo = counter.last_order_no + 1;
+
+  // Update the counter in the database
+  await OrderCounter.update(
+    { last_order_no: newOrderNo },
+    { where: { id: counter.id } }
+  );
+
+  // Format the order number with leading zeros
+  const formattedOrderNo = `GETS-${dateString}-${String(newOrderNo).padStart(
+    4,
+    "0"
+  )}`;
+
+  return formattedOrderNo;
+};
 
 async function addOrder(req, res) {
-  if (!has(req.body, ["email"]) || !has(req.body, ["password"]))
-    throw {
-      code: status.BAD_REQUEST,
-      message: "You must specify the email and password.",
-    };
+  try {
+    const {
+      device_id,
+      unit_price,
+      quantity,
+      first_name,
+      last_name,
+      mobile,
+      email,
+      address,
+      pincode,
+      city,
+      state,
+      country,
+      gst_no,
+      user_id,
+    } = req.body;
 
-  let { email, password } = req.body;
+    const customer = await CustomerModel.create({
+      first_name,
+      last_name,
+      mobile,
+      email,
+      address,
+      pincode,
+      city,
+      state,
+      country,
+      gst_no,
+      created_by: user_id,
+    });
+    const orderNo = await generateOrderNo();
 
-  const user = await salesPersonModel.findOne({ where: { email }, raw: true });
+    const order = await OrderModel.create({
+      order_no: orderNo,
+      device_id,
+      customer_id: customer.id,
+      unit_price,
+      quantity,
+      created_by: user_id,
+    });
 
-  if (!user) {
-    throw { code: status.BAD_REQUEST, message: "User not registered." };
+    res.status(status[200]).json({ order });
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(status[500]).json({
+      message: error.message || "An error occurred while creating the order.",
+    });
   }
-  const isVerified = await verifyPassword(password, user.password);
-  if (!isVerified) {
-    throw { code: status.BAD_REQUEST, message: "Password is incorrect." };
-  }
-  const { SECRET } = process.env;
-  const token = jwt.sign({ userId: user.id, email: user.email }, SECRET, {
-    expiresIn: "365d",
-  });
-  const { password: pass, ...restUser } = user;
-  res.json({
-    status: true,
-    message: "User Login successfull.",
-    data: { ...restUser, token },
-  });
-}
-
-async function requestReset(req, res) {
-  if (!has(req.body, ["email"]))
-    throw {
-      code: status.BAD_REQUEST,
-      message: "You must specify the email and password.",
-    };
-  const { email } = req.body;
-  const user = await salesPersonModel.findOne({ where: { email }, raw: true });
-  if (!user) {
-    throw { code: status.BAD_REQUEST, message: "User not registered." };
-  }
-
-  const { SECRET } = process.env;
-  const token = jwt.sign({ userId: user.id, email: user.email }, SECRET, {
-    expiresIn: "1h",
-  });
-  await sendResetEmail(email, token);
-  res.send({ message: "Password reset link sent to your email." });
-}
-
-async function resetPassword(req, res) {
-  const { token, password } = req.body;
-  const { SECRET } = process.env;
-
-  const decoded = jwt.verify(token, SECRET);
-  const userId = decoded.userId;
-  if (!userId) {
-    throw { code: status.BAD_REQUEST, message: "Invalid token." };
-  }
-  const user = await salesPersonModel.findByPk(userId);
-  if (!user) {
-    throw { code: status.BAD_REQUEST, message: "User not found." };
-  }
-  user.password = await hashPassword(password);
-  await user.save();
-  res.send({ message: "Password has been reset successfully." });
 }
 
 module.exports = {
-  login,
-  requestReset,
-  resetPassword,
+  addOrder,
 };
