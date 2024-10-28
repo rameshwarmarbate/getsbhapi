@@ -17,9 +17,16 @@ const verifyPassword = async (password, hashedPassword) => {
   const isMatch = await bcrypt.compare(password, hashedPassword);
   return isMatch;
 };
+function formatNumber(num = 0, decimal = 2) {
+  if (!num || isNaN(parseFloat(num))) {
+    return 0;
+  }
+  return parseFloat(parseFloat(num || 0)?.toFixed(decimal));
+}
 
 module.exports = {
   generateOTP,
   hashPassword,
   verifyPassword,
+  formatNumber,
 };

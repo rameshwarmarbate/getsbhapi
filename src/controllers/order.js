@@ -1,6 +1,9 @@
 const status = require("http-status");
 // const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const numberToWords = require("number-to-words");
+const { toUpper } = require("lodash");
+
 // const path = require("path");
 // const twilio = require("twilio");
 const { OrderCounter, Order, Customer, Device } = require("../models");
@@ -11,6 +14,7 @@ const { OrderCounter, Order, Customer, Device } = require("../models");
 // const path = require("path");
 
 const PDFDocument = require("pdfkit");
+const { formatNumber } = require("../util");
 const generateOrderNo = async () => {
   const currentDate = new Date();
   const dateString = `${String(currentDate.getDate()).padStart(2, "0")}${String(
@@ -317,7 +321,251 @@ async function getOrders(req, res) {
     console.log(error);
   }
 }
+
+async function downloadInvoice(req, res) {
+  try {
+    const { order_id } = req.query;
+
+    const order = await Order.findByPk(order_id, {
+      include: [
+        {
+          model: Customer,
+          as: "customer",
+        },
+        {
+          model: Device,
+          as: "device",
+        },
+      ],
+    });
+
+    const { unit_price, quantity, customer, device, order_no } = order || {};
+    const {
+      first_name,
+      last_name,
+      mobile,
+      email,
+      address,
+      pincode,
+      city,
+      district,
+      state,
+      country,
+      gst_no,
+    } = customer || {};
+
+    const addressList = [];
+    if (address) {
+      addressList.push(address);
+    }
+    if (city) {
+      addressList.push(city);
+    }
+    if (district) {
+      addressList.push(district);
+    }
+    if (state) {
+      addressList.push(state);
+    }
+    const addresses = addressList.join(", ");
+    const contrycode = [];
+    if (pincode) {
+      contrycode.push(pincode);
+    }
+    if (country) {
+      contrycode.push(country);
+    }
+    const subtotal = formatNumber(quantity * unit_price);
+    const gst = subtotal * 0.18;
+    const total = formatNumber(subtotal + gst);
+    const words = numberToWords.toWords(total);
+
+    const invoiceData = {
+      orderNo: order_no,
+      customer: {
+        name: toUpper(`${first_name} ${last_name}`),
+        address: toUpper(
+          `${addresses || ""}${
+            contrycode?.length ? ` - ${contrycode.join(", ")}` : ""
+          }`
+        ),
+        gstNo: gst_no || "-",
+      },
+      items: [
+        {
+          model: device.title,
+          description: "",
+          qty: quantity,
+          unitPrice: unit_price,
+          total: subtotal,
+        },
+      ],
+      subtotal,
+      gst: formatNumber(gst),
+      total: total,
+      totalInWords: toUpper(words),
+    };
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    doc.pipe(fs.createWriteStream(`invoice_${invoiceData.orderNo}.pdf`));
+
+    const buffers = []; // Array to store chunks of data
+
+    // Collect PDF data in buffers
+    doc.on("data", buffers.push.bind(buffers));
+    doc.on("end", () => {
+      const pdfData = Buffer.concat(buffers);
+      const pdfBase64 = pdfData.toString("base64");
+
+      // Send the base64 PDF string back in the response or via WhatsApp
+      res.json({
+        order,
+        pdfBase64, // This is the base64 version of the PDF
+        message: "PDF generated and converted to Base64 successfully!",
+      });
+    });
+
+    // Fonts and Colors
+    const boldFont = "Helvetica-Bold";
+    const regularFont = "Helvetica";
+
+    // Border around the document
+    doc
+      .lineWidth(1)
+      .rect(40, 40, doc.page.width - 80, doc.page.height - 80)
+      .stroke();
+
+    // Header
+    doc.font(boldFont).fontSize(20).text("gets", { align: "center" });
+    doc
+      .font(regularFont)
+      .fontSize(10)
+      .text("GET EXCELLENT TECH SOLUTIONS", { align: "center" });
+
+    // Seller Information Box
+    doc.fillColor("#d3d3d3").rect(40, 80, 200, 20).fill();
+    doc.fillColor("black").fontSize(8).font(boldFont).text("SELLER", 50, 85);
+    doc.font(regularFont).text("GETS,", 50, 105);
+    doc.text(
+      "PLOT NO. 2, THAKARE HOUSING SOCIETY, JUNA KAMTHI ROAD, NAGPUR - 440026",
+      50,
+      115,
+      { width: 200 }
+    );
+    doc.text("GSTIN: 27AFGPA6470F1ZQ", 50, 135);
+    doc.text("CONTACT: GETSBH3@GMAIL.COM, +91-8329809278", 50, 150);
+    doc.text("WEBSITE: WWW.GETSBH.COM", 50, 165);
+
+    // Invoice Date and No.
+    doc
+      .font(boldFont)
+      .text("TAX INVOICE", 430, 80, { align: "left" })
+      .font(regularFont);
+    doc.text(`DATE: ${new Date().toLocaleDateString()}`, 430, 105);
+    doc.text(`INVOICE NO: ${invoiceData.orderNo}`, 430, 120);
+
+    // Customer Information Box
+    doc.fillColor("#d3d3d3").rect(40, 200, 200, 20).fill();
+    doc.fillColor("black").font(boldFont).text("CUSTOMER", 50, 205);
+    doc.font(regularFont).text(invoiceData.customer.name, 50, 225);
+    doc.text(invoiceData.customer.address, 50, 240, { width: 200 });
+    doc.text(`GSTIN: ${invoiceData.customer.gstNo}`, 50, 265);
+
+    // Table Header
+    const tableTop = 300;
+    doc
+      .fillColor("#d3d3d3")
+      .rect(40, tableTop, doc.page.width - 80, 20)
+      .fill();
+    doc.fillColor("black").font(boldFont).fontSize(8);
+    doc.text("SR NO", 50, tableTop + 5);
+    doc.text("MODEL", 100, tableTop + 5);
+    doc.text("DESCRIPTION", 180, tableTop + 5);
+    doc.text("QTY", 350, tableTop + 5);
+    doc.text("UNIT PRICE", 400, tableTop + 5);
+    doc.text("TOTAL AMOUNT", 500, tableTop + 5);
+
+    // Table Rows
+    let rowTop = tableTop + 25;
+    invoiceData.items.forEach((item, index) => {
+      doc.font(regularFont);
+      doc.text(index + 1, 50, rowTop);
+      doc.text(item.model, 100, rowTop);
+      doc.text(item.description, 180, rowTop);
+      doc.text(item.qty, 350, rowTop, { width: 50, align: "right" });
+      doc.text(`₹ ${item.unitPrice}`, 400, rowTop, {
+        width: 80,
+        align: "right",
+      });
+      doc.text(`₹ ${item.total}`, 500, rowTop, {
+        width: 80,
+        align: "right",
+      });
+      rowTop += 20;
+    });
+
+    // Subtotal and GST
+    doc.text("SUBTOTAL", 400, rowTop + 10, { width: 80, align: "right" });
+    doc.text(`₹ ${invoiceData.subtotal}`, 500, rowTop + 10, {
+      width: 80,
+      align: "right",
+    });
+    rowTop += 15;
+    doc.text("GST @18%", 400, rowTop + 10, { width: 80, align: "right" });
+    doc.text(`₹ ${invoiceData.gst}`, 500, rowTop + 10, {
+      width: 80,
+      align: "right",
+    });
+    rowTop += 20;
+
+    // Total
+    doc
+      .font(boldFont)
+      .text("TOTAL", 400, rowTop + 10, { width: 80, align: "right" });
+    doc.text(`₹ ${invoiceData.total}`, 500, rowTop + 10, {
+      width: 80,
+      align: "right",
+    });
+
+    // Terms and Conditions Box
+    doc
+      .fillColor("#d3d3d3")
+      .rect(40, rowTop + 60, doc.page.width - 80, 20)
+      .fill();
+    doc
+      .fillColor("black")
+      .fontSize(8)
+      .font(boldFont)
+      .text("TERMS & CONDITIONS:", 50, rowTop + 65);
+    doc
+      .font(regularFont)
+      .text(
+        "7-DAYS WARRANTY AGAINST ANY MANUFACTURING DEFECTS.",
+        50,
+        rowTop + 85
+      );
+    doc.text("NO RETURN AND REPLACEMENT ONCE PRODUCT USED.", 50, rowTop + 100);
+
+    // Footer
+    doc.moveDown(2).fontSize(8);
+    doc.text(
+      `TOTAL AMOUNT IN WORDS: ${invoiceData.totalInWords}`,
+      50,
+      rowTop + 130
+    );
+    doc.text("for GETS - GET EXCELLENT TECH SOLUTIONS", 50, rowTop + 150);
+    doc.text("AUTHORISED SIGNATORY", 430, rowTop + 150);
+
+    // Finalize the PDF and end the document
+    doc.end();
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(500).json({
+      message: error.message || "An error occurred while creating the order.",
+    });
+  }
+}
 module.exports = {
   addOrder,
   getOrders,
+  downloadInvoice,
 };
